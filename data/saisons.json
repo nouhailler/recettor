@@ -1,0 +1,25 @@
+{
+  "_description": "Données de saisonnalité des ingrédients en France",
+  "_note": "Ces données sont chargées automatiquement dans la base de données au premier lancement",
+  "fruits": {
+    "abricot": {"mois": [6, 7, 8]},
+    "cerise": {"mois": [5, 6, 7]},
+    "fraise": {"mois": [4, 5, 6, 7]},
+    "framboise": {"mois": [6, 7, 8, 9]},
+    "melon": {"mois": [6, 7, 8, 9]},
+    "peche": {"mois": [6, 7, 8, 9]},
+    "pomme": {"mois": [8, 9, 10, 11, 12, 1, 2, 3]},
+    "poire": {"mois": [8, 9, 10, 11, 12]},
+    "raisin": {"mois": [8, 9, 10]},
+    "tomate": {"mois": [6, 7, 8, 9]}
+  },
+  "legumes": {
+    "asperge": {"mois": [4, 5, 6]},
+    "courgette": {"mois": [5, 6, 7, 8, 9]},
+    "haricot vert": {"mois": [6, 7, 8, 9]},
+    "tomate": {"mois": [6, 7, 8, 9]},
+    "poivron": {"mois": [6, 7, 8, 9]},
+    "carotte": {"mois": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]},
+    "pomme de terre": {"mois": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]}
+  }
+}
