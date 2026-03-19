@@ -1,0 +1,93 @@
+{
+  "_comment": "Format d'import pour Recettor - Seul le champ 'nom' est obligatoire",
+  "_format_version": "1.1",
+  "_valeurs_valides": {
+    "regime": ["Standard", "Végétarien", "Végétalien", "Sans lactose", "Sans gluten"],
+    "difficulte": ["Facile", "Intermédiaire", "Difficile"],
+    "saison_ideale": ["Toutes saisons", "Printemps", "Été", "Automne", "Hiver"],
+    "type_plat": ["Entrée", "Plat principal", "Dessert", "Soupe", "Salade", "Snack", "Boisson", "Sauce", "Accompagnement"],
+    "type_cuisine": ["Française", "Italienne", "Japonaise", "Espagnole", "Mexicaine", "Indienne", "Chinoise", "Américaine", "Méditerranéenne", "Autre"]
+  },
+  "recettes": [
+    {
+      "nom": "Nom de la recette (OBLIGATOIRE)",
+      "autres_noms": "Autres appellations",
+      "description": "Courte description de la recette",
+      "histoire": "Histoire ou origine de la recette",
+      "auteur": "Auteur ou chef",
+      "source": "Livre, site web, etc.",
+      "date_creation": "2024-01-01",
+      "type_cuisine": "Française",
+      "region": "Provence",
+      "occasion": "Quotidien",
+      "type_plat": "Plat principal",
+      "categorie": "Ragoût",
+      "regime": "Standard",
+      "saison_ideale": "Toutes saisons",
+      "temps_preparation": 20,
+      "temps_cuisson": 45,
+      "temps_repos": 0,
+      "difficulte": "Facile",
+      "portions": 4,
+      "cout_estime": "€€",
+      "calories": 350,
+      "proteines": 15,
+      "glucides": 40,
+      "lipides": 12,
+      "fibres": 5,
+      "sucre": 8,
+      "sel": 1.5,
+      "temperature_four": 180,
+      "type_cuisson": "Mijoté",
+      "conservation_frigo": "3 jours",
+      "conservation_congelateur": "3 mois",
+      "rechauffage": "Casserole à feu doux",
+      "profil_aromatique": "Herbacé, méditerranéen",
+      "intensite_gout": "Modéré",
+      "texture": "Fondant",
+      "tags": ["végétarien", "été", "méditerranéen"],
+      "notes": "Notes personnelles",
+      "ingredients": [
+        {
+          "nom": "tomate",
+          "quantite": 4,
+          "unite": "pièce",
+          "preparation": "coupées en dés",
+          "optionnel": false,
+          "remplacement": "tomates en boîte",
+          "qualite": "bien mûres"
+        },
+        {
+          "nom": "aubergine",
+          "quantite": 1,
+          "unite": "pièce",
+          "preparation": "en cubes",
+          "optionnel": false
+        }
+      ],
+      "etapes": [
+        {
+          "numero": 1,
+          "description": "Laver et couper tous les légumes en dés.",
+          "duree": 15,
+          "temperature": 0,
+          "technique": "Émincer"
+        },
+        {
+          "numero": 2,
+          "description": "Faire revenir l'oignon dans l'huile d'olive.",
+          "duree": 5,
+          "temperature": 0,
+          "technique": "Saisir"
+        }
+      ],
+      "equipement": ["Couteau de chef", "Casserole", "Planche à découper"],
+      "allergenes": ["gluten", "lactose"],
+      "astuces": ["Utiliser des légumes bien mûrs pour plus de saveur"],
+      "erreurs": ["Ne pas couvrir la casserole pour éviter l'excès d'eau"],
+      "variantes": ["Version avec courgettes", "Ajout de fromage de chèvre"],
+      "accompagnements": ["Riz", "Pain grillé"],
+      "accords": ["Rosé de Provence", "Eau fraîche"]
+    }
+  ]
+}

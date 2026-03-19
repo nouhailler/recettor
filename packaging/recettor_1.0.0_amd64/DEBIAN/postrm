@@ -1,0 +1,8 @@
+#!/bin/bash
+set -e
+
+if [ "$1" = "purge" ]; then
+    echo "  → Suppression complète de /opt/recettor..."
+    rm -rf /opt/recettor
+    echo "  ✅ Recettor complètement supprimé."
+fi

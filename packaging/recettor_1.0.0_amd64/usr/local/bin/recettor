@@ -1,0 +1,2 @@
+#!/bin/bash
+exec /opt/recettor/venv/bin/python /opt/recettor/main.py "$@"

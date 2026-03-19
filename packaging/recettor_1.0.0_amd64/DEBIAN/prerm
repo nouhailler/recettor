@@ -1,0 +1,6 @@
+#!/bin/bash
+set -e
+
+echo "🗑️  Désinstallation de Recettor..."
+echo "  ℹ️  Vos données (recettes, photos) restent dans /opt/recettor/data"
+echo "     Supprimez manuellement /opt/recettor/data si vous souhaitez tout effacer."
