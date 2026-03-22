@@ -1,12 +1,39 @@
 import os
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QScrollArea,
-    QPushButton, QGridLayout, QFrame, QLineEdit, QCompleter
+    QPushButton, QGridLayout, QFrame, QLineEdit, QCompleter, QMessageBox
 )
-from PyQt5.QtCore import Qt, pyqtSignal, QStringListModel
+from PyQt5.QtCore import Qt, pyqtSignal, QStringListModel, QThread
 from PyQt5.QtGui import QFont, QPixmap, QCursor
 
 from database import db_manager
+from services.ollama_service import (
+    OllamaService, OllamaNotRunningError, OllamaModelNotFoundError,
+    OllamaTimeoutError, OllamaParseError
+)
+
+
+class OllamaWorker(QThread):
+    """Background thread that queries Ollama for recipe suggestions."""
+    suggestions_ready = pyqtSignal(list)
+    error_occurred = pyqtSignal(str, str)  # (type_erreur, message)
+
+    def __init__(self, ingredients, parent=None):
+        super().__init__(parent)
+        self._ingredients = ingredients
+
+    def run(self):
+        try:
+            recipes = OllamaService().suggest_recipes(self._ingredients)
+            self.suggestions_ready.emit(recipes)
+        except OllamaNotRunningError as e:
+            self.error_occurred.emit("not_running", str(e))
+        except OllamaModelNotFoundError as e:
+            self.error_occurred.emit("model_not_found", str(e))
+        except OllamaTimeoutError as e:
+            self.error_occurred.emit("timeout", str(e))
+        except OllamaParseError as e:
+            self.error_occurred.emit("parse_error", str(e))
 
 
 class FridgeIngredientTag(QFrame):
@@ -244,6 +271,23 @@ class FridgeView(QWidget):
         fridge_scroll.setWidget(self.tags_widget)
         layout.addWidget(fridge_scroll)
 
+        # ── IA Suggestions ────────────────────────────────────────────
+        ai_sep = QFrame()
+        ai_sep.setFrameShape(QFrame.HLine)
+        ai_sep.setStyleSheet("color: #E8D5C0;")
+        layout.addWidget(ai_sep)
+
+        self.ai_btn = QPushButton("✨ Suggestions IA (Ollama)")
+        self.ai_btn.setMinimumHeight(44)
+        self.ai_btn.setStyleSheet(
+            "QPushButton { background-color: #6C3483; color: white; border-radius: 8px; "
+            "padding: 6px 20px; font-size: 14px; font-weight: bold; }"
+            "QPushButton:hover { background-color: #5B2C6F; }"
+            "QPushButton:disabled { background-color: #BDC3C7; color: #7F8C8D; }"
+        )
+        self.ai_btn.clicked.connect(self._on_ai_suggestions)
+        layout.addWidget(self.ai_btn)
+
         # ── Results label ─────────────────────────────────────────────
         self.results_lbl = QLabel("Ajoutez des ingrédients pour voir les recettes.")
         self.results_lbl.setStyleSheet("color: #8B6555; font-style: italic; font-size: 13px;")
@@ -355,6 +399,40 @@ class FridgeView(QWidget):
             card = FridgeRecipeCard(recipe)
             card.clicked.connect(self.recipe_selected.emit)
             self.cards_layout.addWidget(card, i // cols, i % cols)
+
+    def _on_ai_suggestions(self):
+        if len(self._fridge) < 2:
+            QMessageBox.information(
+                self,
+                "Pas assez d'ingrédients",
+                "Ajoutez au moins 2 ingrédients dans votre frigo\n"
+                "pour obtenir des suggestions IA."
+            )
+            return
+        self.ai_btn.setEnabled(False)
+        self.ai_btn.setText("⏳ Ollama réfléchit...")
+        self._ollama_worker = OllamaWorker(list(self._fridge))
+        self._ollama_worker.suggestions_ready.connect(self._on_suggestions_ready)
+        self._ollama_worker.error_occurred.connect(self._on_ollama_error)
+        self._ollama_worker.start()
+
+    def _on_suggestions_ready(self, suggestions):
+        self.ai_btn.setEnabled(True)
+        self.ai_btn.setText("✨ Suggestions IA (Ollama)")
+        from ui.ollama_suggestions_dialog import OllamaSuggestionsDialog
+        dlg = OllamaSuggestionsDialog(suggestions, self)
+        dlg.exec_()
+
+    def _on_ollama_error(self, error_type, message):
+        self.ai_btn.setEnabled(True)
+        self.ai_btn.setText("✨ Suggestions IA (Ollama)")
+        _error_messages = {
+            "not_running": "Ollama n'est pas démarré.\n\nLancez la commande :\n  ollama serve",
+            "model_not_found": "Modèle qwen2.5:14b introuvable.\n\nLancez :\n  ollama pull qwen2.5:14b",
+            "timeout": "Délai dépassé (60s).\nEssayez avec un modèle plus léger ou relancez.",
+            "parse_error": "Réponse inattendue d'Ollama.\nRéessayez ou vérifiez la console.",
+        }
+        QMessageBox.warning(self, "Erreur Ollama", _error_messages.get(error_type, message))
 
     # ── Public interface ──────────────────────────────────────────────
 

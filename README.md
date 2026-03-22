@@ -14,6 +14,7 @@ Recettor est une application de bureau développée en Python / PyQt5 qui centra
 | Filtre par ingrédient | Alertes fin de saison | Code couleur vert / orange / rouge |
 | Filtre régime, difficulté, cuisine | Navigation mois par mois | Persistance entre sessions |
 | Filtre calorique (kcal / portion) | Recettes de saison filtrables | Autocomplétion des ingrédients |
+| **Filtre ★ Recettes favorites** | | **✨ Suggestions IA via Ollama** |
 
 | 📋 Fiche recette | ➕ Saisie | 📦 Import / Export |
 |---|---|---|
@@ -21,6 +22,14 @@ Recettor est une application de bureau développée en Python / PyQt5 qui centra
 | Graphique macronutriments | Photo de la recette | Import partiel avec rapport d'erreurs |
 | Calculateur de portions | Autocomplétion ingrédients | Export intégral de la base |
 | Tableau ingrédients ajustés | 14 allergènes gérés | Template d'import inclus |
+| **★ Bouton Favori** | | |
+
+| ★ Favoris | 🛒 Liste de courses | 🤖 IA locale |
+|---|---|---|
+| Ingrédients favoris persistants | Ajout manuel d'articles | Ollama (100 % local, sans Internet) |
+| Recettes favorites avec étoile | Cochage au fur et à mesure | Génère recettes créatives |
+| Filtre favoris dans la recherche | Ajout auto depuis suggestions IA | Sauvegarde enrichie (nutrition, astuces) |
+| Accès rapide depuis la barre latérale | Suppression des cochés / tout vider | Compatible qwen2.5:3b / 7b / 14b |
 
 ---
 
@@ -30,18 +39,20 @@ Recettor est une application de bureau développée en Python / PyQt5 qui centra
 ┌─────────────────────────────────────────────────────────┐
 │  🍴 Recettor                                [_ □ ×]     │
 ├──────────┬──────────────────────────────────────────────┤
-│          │  🔍 Rechercher une recette                   │
+│          │  🔍 Rechercher une recette  [☆ Favoris]      │
 │ Recherche│                                              │
 │          │  ┌─────────────┐  ┌─────────────┐           │
 │Saisonnali│  │ 🥗 Salade   │  │ 🍝 Pasta    │           │
 │          │  │ Niçoise     │  │ Carbonara   │           │
 │Mon Frigo │  │ Facile 20min│  │ Inter. 30min│           │
 │          │  │ 320 kcal    │  │ 680 kcal    │           │
-│  Ajouter │  └─────────────┘  └─────────────┘           │
+│🛒 Courses│  └─────────────┘  └─────────────┘           │
 │          │                                              │
-│ Favoris  │                                              │
+│  Ajouter │                                              │
+│          │                                              │
+│ ★ Favoris│                                              │
 ├──────────┴──────────────────────────────────────────────┤
-│  📅 jeudi 19 mars 2026  |  Saison : Hiver  |  53 recettes │
+│  📅 dimanche 22 mars 2026  |  Saison : Printemps  |  53 recettes │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -79,6 +90,16 @@ python main.py
 
 > 🗄️ La base de données SQLite est créée automatiquement au premier lancement dans `data/recettes.db`.
 
+### Pour les suggestions IA (optionnel)
+
+```bash
+# Installer Ollama (voir https://ollama.com)
+ollama pull qwen2.5:7b   # Modèle recommandé (~8 Go RAM)
+ollama serve             # Lancer le service (dans un terminal séparé)
+```
+
+Le modèle et l'URL sont configurables dans `config.py` (`OLLAMA_MODEL`, `OLLAMA_BASE_URL`).
+
 ---
 
 ## 📦 Dépendances
@@ -88,6 +109,7 @@ python main.py
 | `PyQt5` | Interface graphique |
 | `fuzzywuzzy` | Recherche floue (distance de Levenshtein) |
 | `python-Levenshtein` | Accélérateur pour fuzzywuzzy |
+| `requests` | Appels HTTP vers l'API locale Ollama |
 
 ---
 
@@ -96,17 +118,19 @@ python main.py
 ```
 recettor/
 │
-├── 🐍 main.py                    # Point d'entrée
-├── ⚙️  config.py                  # Chemins et constantes
+├── 🐍 main.py                    # Point d'entrée (HiDPI activé)
+├── ⚙️  config.py                  # Chemins, constantes, config Ollama
 ├── 📋 requirements.txt
 │
 ├── 🖼️  ui/                        # Interface graphique (PyQt5)
 │   ├── main_window.py            # Fenêtre principale + navigation
-│   ├── search_panel.py           # Panneau de recherche
+│   ├── search_panel.py           # Panneau de recherche (filtre favoris)
 │   ├── seasonal_view.py          # Vue saisonnière
-│   ├── fridge_view.py            # Mode Mon Frigo
-│   ├── recipe_view.py            # Fiche recette (6 onglets)
-│   ├── favorites_panel.py        # Gestion des favoris
+│   ├── fridge_view.py            # Mode Mon Frigo + bouton IA Ollama
+│   ├── shopping_list_view.py     # 🛒 Liste de courses
+│   ├── ollama_suggestions_dialog.py  # ✨ Dialog suggestions IA
+│   ├── recipe_view.py            # Fiche recette (6 onglets + ★ favori)
+│   ├── favorites_panel.py        # Favoris ingrédients + recettes (2 onglets)
 │   ├── help_dialog.py            # Aide complète (F1)
 │   └── forms/
 │       ├── add_recipe.py         # Formulaire ajout (9 onglets)
@@ -119,6 +143,7 @@ recettor/
 ├── 🔧 services/
 │   ├── search_engine.py          # Moteur de recherche floue
 │   ├── seasonal_checker.py       # Calcul saison courante
+│   ├── ollama_service.py         # 🤖 Client Ollama (génération IA)
 │   └── validator.py              # Validation des imports JSON
 │
 ├── 📤 import_export/
@@ -166,6 +191,42 @@ recettor/
    - 🟠 **50–79 %** — il manque quelques ingrédients
    - 🔴 **< 50 %** — peu réalisable avec le frigo actuel
 4. Le contenu du frigo est **sauvegardé** entre les sessions
+
+</details>
+
+<details>
+<summary><b>✨ Obtenir des suggestions IA (Ollama)</b></summary>
+
+1. Assurez-vous qu'Ollama est démarré : `ollama serve`
+2. Cliquez sur **Mon Frigo** et ajoutez vos ingrédients
+3. Cliquez sur **✨ Suggestions IA (Ollama)** en bas du panneau
+4. Patientez pendant la génération (le modèle `qwen2.5:7b` prend ~90 s sur CPU)
+5. Parcourez les recettes suggérées :
+   - **🔍 Voir le détail** — affiche les étapes numérotées
+   - **💾 Sauvegarder dans Recettor** — enregistre dans votre base avec nutrition et astuces
+   - **🛒 Ajouter manquants** — ajoute les ingrédients manquants à la liste de courses
+
+> 💡 Modèle configurable dans `config.py` : `OLLAMA_MODEL = "qwen2.5:7b"`
+
+</details>
+
+<details>
+<summary><b>🛒 Gérer la liste de courses</b></summary>
+
+1. Cliquez sur **🛒 Liste de courses** dans la barre latérale
+2. Ajoutez des articles manuellement ou laissez-les s'ajouter via les suggestions IA
+3. Cochez les articles au fur et à mesure de vos achats (texte barré)
+4. Cliquez sur **Supprimer les cochés** pour nettoyer la liste
+
+</details>
+
+<details>
+<summary><b>★ Gérer les recettes favorites</b></summary>
+
+1. Ouvrez une fiche recette et cliquez sur **☆ Favori** dans l'en-tête
+2. L'étoile passe en orange **(★ Favori)** — la recette est ajoutée aux favoris
+3. Retrouvez toutes vos favorites dans **★ Favoris → onglet ★ Recettes**
+4. Ou activez le filtre **☆ Recettes favorites** dans le panneau Recherche
 
 </details>
 
@@ -280,8 +341,10 @@ Garantit que « Œuf », « oeuf », « OEUF » désignent le même ingrédient.
 
 ## 🛣️ Roadmap
 
+- [x] Liste de courses (ajout manuel + auto depuis suggestions IA)
+- [x] Suggestions IA via Ollama (local, sans Internet)
+- [x] Recettes favorites (étoile + filtre dans la recherche)
 - [ ] Planificateur de menus hebdomadaire
-- [ ] Liste de courses automatique
 - [ ] Export PDF des fiches recettes
 - [ ] Synchronisation multi-appareils
 - [ ] Application mobile compagnon

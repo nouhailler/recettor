@@ -12,6 +12,7 @@ from PyQt5.QtGui import QFont, QIcon
 from ui.search_panel import SearchPanel
 from ui.seasonal_view import SeasonalView
 from ui.fridge_view import FridgeView
+from ui.shopping_list_view import ShoppingListView
 from ui.recipe_view import RecipeViewDialog
 from ui.forms.add_recipe import AddRecipeDialog
 from services.seasonal_checker import get_current_season_name
@@ -66,6 +67,7 @@ class MainWindow(QMainWindow):
             ("Rechercher", 0),
             ("Saisonnalite", 1),
             ("Mon Frigo", 2),
+            ("🛒 Liste de courses", 3),
             ("Ajouter", -1),
             ("Importer/Exporter", -2),
             ("★ Favoris", -3),
@@ -109,9 +111,12 @@ class MainWindow(QMainWindow):
         self.fridge_view = FridgeView()
         self.fridge_view.recipe_selected.connect(self._open_recipe_view)
 
-        self.stack.addWidget(self.search_panel)   # index 0
-        self.stack.addWidget(self.seasonal_view)  # index 1
-        self.stack.addWidget(self.fridge_view)    # index 2
+        self.shopping_list_view = ShoppingListView()
+
+        self.stack.addWidget(self.search_panel)        # index 0
+        self.stack.addWidget(self.seasonal_view)       # index 1
+        self.stack.addWidget(self.fridge_view)         # index 2
+        self.stack.addWidget(self.shopping_list_view)  # index 3
 
         layout.addWidget(self.stack)
 
@@ -161,6 +166,8 @@ class MainWindow(QMainWindow):
         self.stack.setCurrentIndex(index)
         for btn, btn_index in self.nav_buttons:
             btn.setChecked(btn_index == index)
+        if index == 3:
+            self.shopping_list_view.refresh()
 
     def _update_status_bar(self):
         now = datetime.now()
@@ -188,6 +195,7 @@ class MainWindow(QMainWindow):
         self.search_panel.refresh()
         self.seasonal_view.refresh()
         self.fridge_view.refresh()
+        self.shopping_list_view.refresh()
         self._update_status_bar()
 
     def _show_import_export_menu(self):

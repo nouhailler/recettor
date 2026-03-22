@@ -56,12 +56,13 @@ Toutes vos données sont stockées dans une base SQLite sur votre machine — au
 <p>La barre latérale gauche donne accès à toutes les fonctionnalités :</p>
 <table>
   <tr><th>Bouton</th><th>Rôle</th></tr>
-  <tr><td><b>Rechercher</b></td><td>Chercher des recettes par nom, ingrédient, régime, difficulté, cuisine ou calories</td></tr>
+  <tr><td><b>Rechercher</b></td><td>Chercher des recettes par nom, ingrédient, régime, difficulté, cuisine ou calories — inclut un filtre ★ Recettes favorites</td></tr>
   <tr><td><b>Saisonnalité</b></td><td>Parcourir les recettes et ingrédients de saison mois par mois</td></tr>
-  <tr><td><b>Mon Frigo</b></td><td>Sélectionner les ingrédients disponibles et obtenir des suggestions de recettes</td></tr>
+  <tr><td><b>Mon Frigo</b></td><td>Sélectionner les ingrédients disponibles, obtenir des suggestions classiques et des suggestions IA via Ollama</td></tr>
+  <tr><td><b>🛒 Liste de courses</b></td><td>Gérer votre liste d'articles à acheter, avec ajout automatique depuis les suggestions IA</td></tr>
   <tr><td><b>Ajouter</b></td><td>Créer une nouvelle recette via un formulaire complet en 9 onglets</td></tr>
   <tr><td><b>Importer / Exporter</b></td><td>Échanger des recettes au format JSON</td></tr>
-  <tr><td><b>★ Favoris</b></td><td>Gérer les ingrédients favoris utilisés pour filtrer rapidement</td></tr>
+  <tr><td><b>★ Favoris</b></td><td>Gérer les ingrédients favoris et les recettes favorites (deux onglets)</td></tr>
 </table>
 
 <h2>Barre de statut</h2>
@@ -142,6 +143,14 @@ Seules les recettes dont les calories par portion sont renseignées ET inférieu
 Cliquez sur un tag pour lancer immédiatement une recherche sur cet ingrédient.
 Le bouton <b>Rechercher avec tous mes favoris</b> lance une recherche globale sur l'ensemble de vos favoris.</p>
 
+<h2>Filtre Recettes favorites</h2>
+<p>Cliquez sur le bouton <b>☆ Recettes favorites</b> (à droite dans la barre de filtres) pour n'afficher
+que vos recettes marquées comme favorites. Lorsqu'il est actif, le bouton affiche <b>★</b> en doré.</p>
+<div class="tip">
+  <b>Astuce :</b> combinez ce filtre avec la recherche par nom ou par ingrédient pour retrouver instantanément
+  une recette favorite particulière.
+</div>
+
 <h2>Fiches résultats</h2>
 <p>Chaque carte affiche : image, nom, badges (type, difficulté, cuisine), durée totale, régime, calories, et note.
 La couleur du badge difficulté est : <span style="color:#27AE60"><b>vert</b></span> = Facile,
@@ -219,6 +228,43 @@ Lorsque vous relancez l'application, vous retrouvez exactement les mêmes ingré
 <div class="tip">
   <b>Astuce :</b> commencez par les recettes en vert — vous les réaliserez avec peu ou pas d'achats supplémentaires.
   Les recettes en orange vous indiquent les ingrédients manquants pour compléter votre liste de courses.
+</div>
+
+<h2>✨ Suggestions IA (Ollama)</h2>
+<p>Le bouton <b>✨ Suggestions IA (Ollama)</b> (en bas du panneau Mon Frigo) envoie la liste de vos ingrédients
+à un modèle de langage local <b>Ollama</b> pour obtenir des suggestions de recettes créatives,
+même si elles ne figurent pas encore dans votre base.</p>
+
+<h3>Prérequis</h3>
+<ul>
+  <li>Ollama doit être installé et démarré : <code>ollama serve</code></li>
+  <li>Le modèle configuré doit être disponible (voir <code>config.py</code> : <code>OLLAMA_MODEL</code>, par défaut <code>qwen2.5:7b</code>)</li>
+  <li>Avoir au moins un ingrédient dans le frigo</li>
+</ul>
+
+<h3>Cartes de suggestions</h3>
+<p>Chaque carte contient le nom, la description, la liste des ingrédients et les étapes résumées.
+Trois actions sont disponibles :</p>
+<ul>
+  <li><b>🔍 Voir le détail</b> — affiche une fiche avec les étapes numérotées</li>
+  <li><b>💾 Sauvegarder dans Recettor</b> — enregistre la recette dans la base avec les données enrichies
+      (nutrition, astuces, erreurs à éviter, variantes, source = nom du modèle)</li>
+  <li><b>🛒 Ajouter manquants (N)</b> — ajoute les ingrédients manquants à la liste de courses
+      (N = nombre d'ingrédients absents du frigo)</li>
+</ul>
+
+<h3>Messages d'erreur courants</h3>
+<table>
+  <tr><th>Message</th><th>Cause / Solution</th></tr>
+  <tr><td>Ollama non disponible</td><td>Lancez <code>ollama serve</code> dans un terminal.</td></tr>
+  <tr><td>Modèle introuvable</td><td>Lancez <code>ollama pull qwen2.5:7b</code>.</td></tr>
+  <tr><td>Délai dépassé (120s)</td><td>Inférence trop lente (CPU). Essayez un modèle plus petit (<code>qwen2.5:3b</code>)
+      ou augmentez <code>OLLAMA_TIMEOUT</code> dans <code>config.py</code>.</td></tr>
+  <tr><td>Réponse invalide</td><td>Le modèle n'a pas respecté le JSON. Relancez la requête.</td></tr>
+</table>
+</div>
+<div class="note">
+  <b>Confidentialité :</b> Ollama fonctionne entièrement en local. Vos données ne quittent jamais votre machine.
 </div>
 """)
 
@@ -317,6 +363,12 @@ Les valeurs à zéro ne sont pas affichées.</p>
 <p>Les boutons <b>Modifier</b> et <b>Supprimer</b> sont accessibles dans l'en-tête de la fiche.
 La suppression demande une confirmation. Après modification ou suppression, tous les panneaux
 de l'application (recherche, saisonnalité, frigo) se mettent à jour automatiquement.</p>
+
+<h2>Marquer comme favori</h2>
+<p>Dans l'en-tête de la fiche, le bouton <b>☆ Favori</b> permet de marquer ou démarquer la recette comme favorite.
+L'étoile passe en orange (<b>★ Favori</b>) lorsque la recette est dans les favoris.
+Retrouvez toutes vos recettes favorites dans <b>★ Favoris → onglet ★ Recettes</b> ou via le filtre
+<b>☆ Recettes favorites</b> dans le panneau Recherche.</p>
 """)
 
 ADD_RECIPE = _page("""
@@ -451,18 +503,20 @@ avec l'intégralité des champs disponibles et des exemples de valeurs.</p>
 
 FAVORITES = _page("""
 <h1>Gestion des favoris</h1>
-<p>Les ingrédients favoris sont des raccourcis de recherche que vous utilisez fréquemment.
-Ils sont persistants (sauvegardés en base) et disponibles entre toutes les sessions.</p>
+<p>La fenêtre <b>★ Mes Favoris</b> (barre latérale) est organisée en deux onglets :
+<b>★ Ingrédients</b> et <b>★ Recettes</b>. Tous les favoris sont persistants (sauvegardés en base).</p>
 
-<h2>Ajouter un favori</h2>
-<p>Dans la fenêtre <b>Gérer mes favoris</b> (accessible via la barre latérale ou le panneau Recherche) :
-tapez un ingrédient (autocomplétion disponible) et cliquez sur <b>★ Ajouter</b>.
+<h2>Onglet ★ Ingrédients</h2>
+<p>Les ingrédients favoris sont des raccourcis de recherche que vous utilisez fréquemment.</p>
+
+<h3>Ajouter un ingrédient favori</h3>
+<p>Tapez un ingrédient (autocomplétion disponible) et cliquez sur <b>★ Ajouter</b> ou appuyez sur Entrée.
 Si l'ingrédient est déjà dans vos favoris, un message vous l'indique.</p>
 
-<h2>Supprimer un favori</h2>
+<h3>Supprimer un ingrédient favori</h3>
 <p>Cliquez sur le <b>✕</b> du tag à supprimer, ou utilisez <b>Tout supprimer</b> (avec confirmation).</p>
 
-<h2>Utiliser les favoris dans la recherche</h2>
+<h3>Utiliser les ingrédients favoris dans la recherche</h3>
 <p>Dans le panneau Recherche, les tags favoris apparaissent en jaune dans la zone <b>★ Mes ingrédients favoris</b>.
 Deux usages :</p>
 <ul>
@@ -470,6 +524,127 @@ Deux usages :</p>
   <li><b>Rechercher avec tous mes favoris</b> : lance une recherche qui retourne les recettes
       contenant <i>au moins un</i> de vos ingrédients favoris.</li>
 </ul>
+
+<h2>Onglet ★ Recettes</h2>
+<p>Vos recettes favorites, ajoutées via le bouton <b>☆ Favori</b> dans la fiche de chaque recette.</p>
+
+<h3>Ajouter une recette aux favoris</h3>
+<p>Ouvrez une recette et cliquez sur <b>☆ Favori</b> dans son en-tête.
+L'étoile passe en orange (<b>★ Favori</b>) pour confirmer l'ajout.</p>
+
+<h3>Accéder aux recettes favorites</h3>
+<ul>
+  <li>Via <b>★ Favoris → onglet ★ Recettes</b> : liste complète avec badges de type, difficulté et cuisine.
+      Boutons <b>Ouvrir</b> et <b>✕</b> (retirer des favoris).</li>
+  <li>Via le filtre <b>☆ Recettes favorites</b> dans le panneau Recherche : affiche uniquement vos recettes
+      favorites parmi les résultats.</li>
+</ul>
+
+<h3>Retirer une recette des favoris</h3>
+<p>Cliquez sur <b>✕</b> dans la liste des favoris, ou cliquez à nouveau sur <b>★ Favori</b> dans la fiche recette.</p>
+
+<div class="note">
+  Supprimer une recette de la base la retire automatiquement de vos favoris.
+</div>
+""")
+
+SHOPPING_LIST = _page("""
+<h1>Liste de courses</h1>
+<p>Accessible via <b>🛒 Liste de courses</b> dans la barre latérale, ce panneau vous permet de noter
+les articles à acheter et de les cocher au fur et à mesure de vos achats.</p>
+
+<h2>Ajouter un article</h2>
+<p>Tapez le nom de l'article dans le champ de saisie et appuyez sur <b>Entrée</b> ou cliquez sur <b>+ Ajouter</b>.
+Si l'article est déjà dans la liste, il n'est pas dupliqué.</p>
+
+<h2>Cocher / Décocher un article</h2>
+<p>Cliquez sur la case à gauche de l'article pour le cocher (texte barré = article acheté).
+Cliquez à nouveau pour le décocher.</p>
+
+<h2>Supprimer des articles</h2>
+<ul>
+  <li>Bouton <b>✕</b> à droite d'un article : supprime cet article uniquement.</li>
+  <li><b>Supprimer les cochés</b> : retire tous les articles cochés d'un coup.</li>
+  <li><b>Tout vider</b> : efface toute la liste (avec confirmation).</li>
+</ul>
+
+<h2>Ajout automatique depuis les suggestions IA</h2>
+<p>Dans la fenêtre de suggestions IA (Mon Frigo → ✨ Suggestions IA), chaque carte affiche le bouton
+<b>🛒 Ajouter manquants (N)</b> lorsque des ingrédients de la recette sont absents du frigo.
+Cliquez dessus pour les ajouter automatiquement à votre liste de courses.</p>
+
+<div class="tip">
+  <b>Workflow recommandé :</b>
+  <ol>
+    <li>Ajoutez vos ingrédients dans <b>Mon Frigo</b></li>
+    <li>Cliquez sur <b>✨ Suggestions IA</b> pour obtenir des idées de recettes</li>
+    <li>Cliquez sur <b>🛒 Ajouter manquants</b> pour peupler la liste de courses automatiquement</li>
+    <li>Au supermarché, cochez les articles un par un</li>
+    <li>Cliquez sur <b>Supprimer les cochés</b> pour nettoyer la liste</li>
+  </ol>
+</div>
+
+<h2>Persistance</h2>
+<p>La liste est sauvegardée en base SQLite et persiste entre toutes les sessions.
+L'état coché/décoché de chaque article est également mémorisé.</p>
+""")
+
+OLLAMA_AI = _page("""
+<h1>Intelligence artificielle (Ollama)</h1>
+<p>Recettor s'intègre avec <b>Ollama</b>, un moteur d'inférence local qui fait tourner des modèles de langage
+entièrement sur votre machine — aucune donnée n'est envoyée à Internet.</p>
+
+<h2>Installation d'Ollama</h2>
+<ol>
+  <li>Téléchargez Ollama sur <b>ollama.com</b></li>
+  <li>Installez-le (Linux, macOS ou Windows)</li>
+  <li>Démarrez le service : <code>ollama serve</code></li>
+  <li>Téléchargez le modèle recommandé : <code>ollama pull qwen2.5:7b</code></li>
+</ol>
+
+<h2>Configuration dans Recettor</h2>
+<p>Trois paramètres dans <code>config.py</code> :</p>
+<table>
+  <tr><th>Paramètre</th><th>Valeur par défaut</th><th>Description</th></tr>
+  <tr><td><code>OLLAMA_BASE_URL</code></td><td><code>http://localhost:11434</code></td><td>URL du serveur Ollama</td></tr>
+  <tr><td><code>OLLAMA_MODEL</code></td><td><code>qwen2.5:7b</code></td><td>Nom du modèle à utiliser</td></tr>
+  <tr><td><code>OLLAMA_TIMEOUT</code></td><td><code>120</code></td><td>Délai maximal en secondes</td></tr>
+</table>
+
+<h2>Choisir le bon modèle</h2>
+<table>
+  <tr><th>Modèle</th><th>RAM requise</th><th>GPU</th><th>Vitesse CPU</th><th>Qualité</th></tr>
+  <tr><td><code>qwen2.5:3b</code></td><td>~3 Go</td><td>Non requis</td><td>Rapide (~30 s)</td><td>Basique</td></tr>
+  <tr><td><code>qwen2.5:7b</code></td><td>~8 Go</td><td>Non requis</td><td>Moyen (~90 s)</td><td>Bonne ✓</td></tr>
+  <tr><td><code>qwen2.5:14b</code></td><td>~16 Go</td><td>Recommandé</td><td>Lent (&gt;120 s)</td><td>Excellente</td></tr>
+</table>
+
+<h2>Données renvoyées par le modèle</h2>
+<p>Ollama reçoit un prompt système qui lui demande un tableau JSON de recettes avec les champs :</p>
+<div class="calc">
+  nom, description, ingredients[], etapes_resume,
+  temps_preparation, temps_cuisson, nb_portions,
+  type_plat, type_cuisine, regime, saison,
+  calories_portion, proteines, glucides, lipides, fibres,
+  astuces[], erreurs_a_eviter[], variantes[]
+</div>
+<p>Lorsque vous sauvegardez une recette, tous ces champs sont enregistrés dans la base :
+la source est automatiquement remplie avec le nom du modèle, et les notes personnelles indiquent
+<i>« Recette générée par : &lt;modèle&gt; »</i>.</p>
+
+<h2>Messages d'erreur</h2>
+<table>
+  <tr><th>Message affiché</th><th>Cause</th><th>Solution</th></tr>
+  <tr><td>Ollama non disponible</td><td>Service non démarré</td><td><code>ollama serve</code></td></tr>
+  <tr><td>Modèle introuvable</td><td>Modèle non téléchargé</td><td><code>ollama pull qwen2.5:7b</code></td></tr>
+  <tr><td>Délai dépassé (120s)</td><td>Inférence trop lente (CPU)</td><td>Utiliser <code>qwen2.5:3b</code> ou augmenter <code>OLLAMA_TIMEOUT</code></td></tr>
+  <tr><td>Réponse invalide</td><td>JSON malformé par le modèle</td><td>Relancer la requête</td></tr>
+</table>
+
+<div class="note">
+  <b>Confidentialité :</b> Ollama fonctionne entièrement en local.
+  Vos ingrédients et recettes ne quittent jamais votre machine.
+</div>
 """)
 
 CALCULATIONS = _page("""
@@ -641,10 +816,12 @@ class HelpDialog(QDialog):
             ("Recherche",               SEARCH),
             ("Saisonnalité",            SEASONAL),
             ("Mon Frigo",               FRIDGE),
+            ("🛒 Liste de courses",     SHOPPING_LIST),
             ("Fiche recette",           RECIPE_VIEW),
             ("Ajouter / Modifier",      ADD_RECIPE),
             ("Import / Export",         IMPORT_EXPORT),
-            ("Favoris",                 FAVORITES),
+            ("★ Favoris",              FAVORITES),
+            ("✨ IA (Ollama)",          OLLAMA_AI),
             ("Calculs & formules",      CALCULATIONS),
         ]
         for title, html in pages:

@@ -152,6 +152,19 @@ def initialize_db():
             name TEXT NOT NULL UNIQUE
         );
 
+        CREATE TABLE IF NOT EXISTS shopping_list (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL UNIQUE,
+            checked INTEGER DEFAULT 0,
+            added_date TEXT DEFAULT ''
+        );
+
+        CREATE TABLE IF NOT EXISTS favorite_recipes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            recipe_id INTEGER NOT NULL UNIQUE,
+            added_date TEXT DEFAULT ''
+        );
+
         CREATE INDEX IF NOT EXISTS idx_recipe_name ON recipes(name);
         CREATE INDEX IF NOT EXISTS idx_ingredient_name ON ingredients(name);
         CREATE INDEX IF NOT EXISTS idx_recipe_ingredients_recipe ON recipe_ingredients(recipe_id);
@@ -458,6 +471,7 @@ def delete_recipe(recipe_id):
             os.remove(row['image_path'])
         except Exception:
             pass
+    c.execute("DELETE FROM favorite_recipes WHERE recipe_id=?", (recipe_id,))
     c.execute("DELETE FROM recipes WHERE id=?", (recipe_id,))
     conn.commit()
     conn.close()
@@ -718,3 +732,121 @@ def clear_fridge_ingredients():
     c.execute("DELETE FROM fridge_ingredients")
     conn.commit()
     conn.close()
+
+
+# ── Liste de courses ──────────────────────────────────────────────────────────
+
+def get_shopping_list():
+    """Retourne tous les articles : non cochés d'abord, puis cochés."""
+    conn = get_connection()
+    c = conn.cursor()
+    c.execute(
+        "SELECT id, name, checked, added_date FROM shopping_list "
+        "ORDER BY checked ASC, id DESC"
+    )
+    rows = c.fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def add_shopping_item(name):
+    """Ajoute un article. Retourne True si ajouté, False si déjà présent."""
+    name = name.strip()
+    if not name:
+        return False
+    conn = get_connection()
+    c = conn.cursor()
+    try:
+        c.execute(
+            "INSERT OR IGNORE INTO shopping_list (name, added_date) VALUES (?, ?)",
+            (name, datetime.now().isoformat())
+        )
+        added = c.rowcount > 0
+        conn.commit()
+    finally:
+        conn.close()
+    return added
+
+
+def remove_shopping_item(item_id):
+    conn = get_connection()
+    c = conn.cursor()
+    c.execute("DELETE FROM shopping_list WHERE id=?", (item_id,))
+    conn.commit()
+    conn.close()
+
+
+def toggle_shopping_item(item_id):
+    """Bascule l'état coché/non-coché d'un article."""
+    conn = get_connection()
+    c = conn.cursor()
+    c.execute("UPDATE shopping_list SET checked = 1 - checked WHERE id=?", (item_id,))
+    conn.commit()
+    conn.close()
+
+
+def clear_checked_items():
+    conn = get_connection()
+    c = conn.cursor()
+    c.execute("DELETE FROM shopping_list WHERE checked=1")
+    conn.commit()
+    conn.close()
+
+
+def clear_shopping_list():
+    conn = get_connection()
+    c = conn.cursor()
+    c.execute("DELETE FROM shopping_list")
+    conn.commit()
+    conn.close()
+
+
+# ── Recettes favorites ────────────────────────────────────────────────────────
+
+def get_favorite_recipes():
+    """Retourne les recettes favorites avec leurs infos de base."""
+    conn = get_connection()
+    c = conn.cursor()
+    c.execute("""
+        SELECT r.id, r.name, r.dish_type, r.difficulty, r.cuisine_type,
+               r.prep_time, r.cook_time, r.image_path
+        FROM favorite_recipes fr
+        JOIN recipes r ON fr.recipe_id = r.id
+        ORDER BY fr.added_date DESC
+    """)
+    rows = c.fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def add_favorite_recipe(recipe_id):
+    """Ajoute une recette aux favoris. Retourne True si ajoutée."""
+    conn = get_connection()
+    c = conn.cursor()
+    try:
+        c.execute(
+            "INSERT OR IGNORE INTO favorite_recipes (recipe_id, added_date) VALUES (?, ?)",
+            (recipe_id, datetime.now().isoformat())
+        )
+        added = c.rowcount > 0
+        conn.commit()
+    finally:
+        conn.close()
+    return added
+
+
+def remove_favorite_recipe(recipe_id):
+    conn = get_connection()
+    c = conn.cursor()
+    c.execute("DELETE FROM favorite_recipes WHERE recipe_id=?", (recipe_id,))
+    conn.commit()
+    conn.close()
+
+
+def is_favorite_recipe(recipe_id):
+    conn = get_connection()
+    c = conn.cursor()
+    c.execute("SELECT id FROM favorite_recipes WHERE recipe_id=?", (recipe_id,))
+    row = c.fetchone()
+    conn.close()
+    return row is not None

@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QLineEdit, QScrollArea, QWidget, QFrame, QCompleter,
-    QMessageBox, QGridLayout
+    QMessageBox, QGridLayout, QTabWidget
 )
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QFont
@@ -9,8 +9,10 @@ from PyQt5.QtGui import QFont
 from database import db_manager
 
 
+# ── Tag ingrédient favori ─────────────────────────────────────────────────────
+
 class FavoriteTag(QFrame):
-    """A removable tag widget for a favorite ingredient."""
+    """Tag supprimable pour un ingrédient favori."""
     removed = pyqtSignal(str)
 
     def __init__(self, name, parent=None):
@@ -53,49 +55,174 @@ class FavoriteTag(QFrame):
         layout.addWidget(del_btn)
 
 
+# ── Carte recette favorite ────────────────────────────────────────────────────
+
+class _FavoriteRecipeRow(QFrame):
+    """Ligne affichant une recette favorite avec bouton retirer."""
+    open_requested = pyqtSignal(int)
+    removed = pyqtSignal(int)
+
+    def __init__(self, recipe: dict, parent=None):
+        super().__init__(parent)
+        self._recipe_id = recipe['id']
+        self.setFrameShape(QFrame.NoFrame)
+        self.setStyleSheet(
+            "QFrame { background-color: white; border-radius: 8px; "
+            "border: 1px solid #E8D5C0; }"
+        )
+        self._build(recipe)
+
+    def _build(self, recipe: dict):
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(12, 10, 12, 10)
+        layout.setSpacing(12)
+
+        # Étoile déco
+        star_lbl = QLabel("★")
+        star_lbl.setStyleSheet("color: #F39C12; font-size: 18px;")
+        star_lbl.setFixedWidth(22)
+        layout.addWidget(star_lbl)
+
+        # Infos recette
+        info = QVBoxLayout()
+        info.setSpacing(3)
+
+        name_lbl = QLabel(recipe['name'])
+        name_lbl.setFont(QFont("Arial", 13, QFont.Bold))
+        name_lbl.setStyleSheet("color: #2C1810;")
+        info.addWidget(name_lbl)
+
+        badges_row = QHBoxLayout()
+        badges_row.setSpacing(6)
+        for text, bg, fg in [
+            (recipe.get('dish_type') or '',    '#F5CBA7', '#2C1810'),
+            (recipe.get('difficulty') or '',   '#D5E8D4', '#1B5E20'),
+            (recipe.get('cuisine_type') or '',  '#D6EAF8', '#1A5276'),
+        ]:
+            if text:
+                b = QLabel(text)
+                b.setStyleSheet(
+                    f"background-color: {bg}; color: {fg}; border-radius: 8px; "
+                    "padding: 2px 8px; font-size: 12px; font-weight: bold;"
+                )
+                badges_row.addWidget(b)
+
+        prep = (recipe.get('prep_time') or 0) + (recipe.get('cook_time') or 0)
+        if prep:
+            t = QLabel(f"⏱ {prep} min")
+            t.setStyleSheet("color: #8B6555; font-size: 12px;")
+            badges_row.addWidget(t)
+
+        badges_row.addStretch()
+        info.addLayout(badges_row)
+        layout.addLayout(info, 1)
+
+        # Bouton ouvrir
+        open_btn = QPushButton("Ouvrir")
+        open_btn.setFixedWidth(72)
+        open_btn.setStyleSheet(
+            "QPushButton { background-color: #D4A574; color: #2C1810; border-radius: 6px; "
+            "padding: 5px 10px; font-size: 12px; font-weight: bold; }"
+            "QPushButton:hover { background-color: #C49060; }"
+        )
+        open_btn.clicked.connect(lambda: self.open_requested.emit(self._recipe_id))
+        layout.addWidget(open_btn)
+
+        # Bouton retirer
+        del_btn = QPushButton("✕")
+        del_btn.setFixedSize(28, 28)
+        del_btn.setStyleSheet(
+            "QPushButton { background-color: transparent; color: #C0392B; "
+            "border: none; font-size: 16px; font-weight: bold; padding: 0; }"
+            "QPushButton:hover { color: #922B21; }"
+        )
+        del_btn.clicked.connect(lambda: self.removed.emit(self._recipe_id))
+        layout.addWidget(del_btn)
+
+
+# ── Dialog principal ──────────────────────────────────────────────────────────
+
 class ManageFavoritesDialog(QDialog):
     favorites_changed = pyqtSignal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Gérer mes ingrédients favoris")
-        self.setMinimumSize(560, 480)
-        self.resize(600, 520)
+        self.setWindowTitle("Mes Favoris")
+        self.setMinimumSize(620, 540)
+        self.resize(680, 580)
         self._build_ui()
-        self._refresh()
+        self._refresh_ingredients()
+        self._refresh_recipes()
 
     def _build_ui(self):
         layout = QVBoxLayout(self)
-        layout.setSpacing(16)
-        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(0)
+        layout.setContentsMargins(0, 0, 0, 0)
 
-        # Title
-        title = QLabel("★ Mes ingrédients favoris")
-        title.setFont(QFont("Arial", 17, QFont.Bold))
-        title.setStyleSheet("color: #E67E22;")
-        layout.addWidget(title)
+        # ── En-tête ───────────────────────────────────────────────────
+        header = QWidget()
+        header.setStyleSheet("background-color: #2C1810;")
+        h_layout = QVBoxLayout(header)
+        h_layout.setContentsMargins(20, 16, 20, 12)
+        h_layout.setSpacing(4)
 
-        subtitle = QLabel(
+        title = QLabel("★ Mes Favoris")
+        title.setFont(QFont("Arial", 18, QFont.Bold))
+        title.setStyleSheet("color: #F39C12;")
+        h_layout.addWidget(title)
+
+        subtitle = QLabel("Retrouvez vos ingrédients et recettes préférés en un clin d'œil.")
+        subtitle.setStyleSheet("color: #D4A574; font-size: 13px;")
+        h_layout.addWidget(subtitle)
+        layout.addWidget(header)
+
+        # ── Onglets ───────────────────────────────────────────────────
+        self._tabs = QTabWidget()
+        self._tabs.setDocumentMode(True)
+        self._tabs.addTab(self._build_ingredients_tab(), "★ Ingrédients")
+        self._tabs.addTab(self._build_recipes_tab(),     "★ Recettes")
+        layout.addWidget(self._tabs)
+
+        # ── Footer ────────────────────────────────────────────────────
+        footer = QWidget()
+        footer.setStyleSheet("background-color: #F5F0E8; border-top: 1px solid #E8D5C0;")
+        f_layout = QHBoxLayout(footer)
+        f_layout.setContentsMargins(20, 10, 20, 10)
+        f_layout.addStretch()
+        close_btn = QPushButton("Fermer")
+        close_btn.setMinimumWidth(100)
+        close_btn.clicked.connect(self.accept)
+        f_layout.addWidget(close_btn)
+        layout.addWidget(footer)
+
+    # ── Onglet ingrédients ────────────────────────────────────────────
+
+    def _build_ingredients_tab(self):
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+        layout.setSpacing(12)
+        layout.setContentsMargins(20, 16, 20, 16)
+
+        desc = QLabel(
             "Ajoutez vos ingrédients préférés pour les retrouver rapidement "
             "et rechercher des recettes qui les utilisent."
         )
-        subtitle.setWordWrap(True)
-        subtitle.setStyleSheet("color: #7F8C8D; font-size: 13px;")
-        layout.addWidget(subtitle)
+        desc.setWordWrap(True)
+        desc.setStyleSheet("color: #7F8C8D; font-size: 13px;")
+        layout.addWidget(desc)
 
-        # Add ingredient row
-        add_group_lbl = QLabel("Ajouter un ingrédient favori :")
-        add_group_lbl.setFont(QFont("Arial", 13, QFont.Bold))
-        layout.addWidget(add_group_lbl)
+        # Saisie
+        add_lbl = QLabel("Ajouter un ingrédient favori :")
+        add_lbl.setFont(QFont("Arial", 13, QFont.Bold))
+        layout.addWidget(add_lbl)
 
         add_row = QHBoxLayout()
         add_row.setSpacing(10)
 
         self.add_edit = QLineEdit()
-        self.add_edit.setPlaceholderText("Tapez un ingrédient (ex: tomate, poulet, basilic...)")
+        self.add_edit.setPlaceholderText("Ex : tomate, poulet, basilic...")
         self.add_edit.setMinimumHeight(38)
         self.add_edit.setFont(QFont("Arial", 13))
-        # Autocomplete from known ingredients
         known = db_manager.get_all_ingredients()
         completer = QCompleter(known)
         completer.setCaseSensitivity(Qt.CaseInsensitive)
@@ -118,14 +245,13 @@ class ManageFavoritesDialog(QDialog):
         self.error_lbl.setStyleSheet("color: #E74C3C; font-size: 12px;")
         layout.addWidget(self.error_lbl)
 
-        # Favorites list
-        list_lbl = QLabel("Mes favoris :")
-        list_lbl.setFont(QFont("Arial", 13, QFont.Bold))
-        layout.addWidget(list_lbl)
+        lbl = QLabel("Mes ingrédients favoris :")
+        lbl.setFont(QFont("Arial", 13, QFont.Bold))
+        layout.addWidget(lbl)
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
-        scroll.setMinimumHeight(180)
+        scroll.setMinimumHeight(160)
         self.tags_container = QWidget()
         self.tags_layout = QGridLayout(self.tags_container)
         self.tags_layout.setSpacing(10)
@@ -133,37 +259,75 @@ class ManageFavoritesDialog(QDialog):
         scroll.setWidget(self.tags_container)
         layout.addWidget(scroll)
 
-        self.empty_lbl = QLabel("Aucun ingrédient favori pour l'instant.")
-        self.empty_lbl.setStyleSheet("color: #7F8C8D; font-style: italic; font-size: 13px;")
-        self.empty_lbl.setAlignment(Qt.AlignCenter)
-        layout.addWidget(self.empty_lbl)
+        self.ing_empty_lbl = QLabel("Aucun ingrédient favori pour l'instant.")
+        self.ing_empty_lbl.setStyleSheet("color: #7F8C8D; font-style: italic; font-size: 13px;")
+        self.ing_empty_lbl.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.ing_empty_lbl)
 
-        # Buttons
         btn_row = QHBoxLayout()
         btn_row.addStretch()
         clear_btn = QPushButton("Tout supprimer")
         clear_btn.setStyleSheet(
             "QPushButton { background-color: #E74C3C; color: white; border-radius: 6px; padding: 6px 16px; }"
+            "QPushButton:hover { background-color: #C0392B; }"
         )
-        clear_btn.clicked.connect(self._clear_all)
+        clear_btn.clicked.connect(self._clear_all_ingredients)
         btn_row.addWidget(clear_btn)
-        close_btn = QPushButton("Fermer")
-        close_btn.setStyleSheet(
-            "QPushButton { background-color: #95A5A6; color: white; border-radius: 6px; padding: 6px 20px; }"
-        )
-        close_btn.clicked.connect(self.accept)
-        btn_row.addWidget(close_btn)
         layout.addLayout(btn_row)
 
-    def _refresh(self):
-        # Clear tags
+        return tab
+
+    # ── Onglet recettes ───────────────────────────────────────────────
+
+    def _build_recipes_tab(self):
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+        layout.setSpacing(12)
+        layout.setContentsMargins(20, 16, 20, 16)
+
+        desc = QLabel(
+            "Vos recettes favorites — cliquez sur l'étoile ★ dans une fiche recette "
+            "pour l'ajouter ici."
+        )
+        desc.setWordWrap(True)
+        desc.setStyleSheet("color: #7F8C8D; font-size: 13px;")
+        layout.addWidget(desc)
+
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll.setStyleSheet("QScrollArea { border: none; background-color: #F5F0E8; }")
+
+        self._recipes_container = QWidget()
+        self._recipes_container.setStyleSheet("background-color: #F5F0E8;")
+        self._recipes_layout = QVBoxLayout(self._recipes_container)
+        self._recipes_layout.setContentsMargins(0, 0, 0, 0)
+        self._recipes_layout.setSpacing(8)
+        self._recipes_layout.setAlignment(Qt.AlignTop)
+
+        self.rec_empty_lbl = QLabel(
+            "Aucune recette favorite pour l'instant.\n\n"
+            "Ouvrez une recette et cliquez sur ☆ Favori dans l'en-tête."
+        )
+        self.rec_empty_lbl.setStyleSheet("color: #7F8C8D; font-style: italic; font-size: 13px;")
+        self.rec_empty_lbl.setAlignment(Qt.AlignCenter)
+        self._recipes_layout.addWidget(self.rec_empty_lbl)
+
+        scroll.setWidget(self._recipes_container)
+        layout.addWidget(scroll)
+
+        return tab
+
+    # ── Rafraîchissement ingrédients ──────────────────────────────────
+
+    def _refresh_ingredients(self):
         while self.tags_layout.count():
             item = self.tags_layout.takeAt(0)
             if item.widget():
                 item.widget().deleteLater()
 
         favorites = db_manager.get_favorite_ingredients()
-        self.empty_lbl.setVisible(len(favorites) == 0)
+        self.ing_empty_lbl.setVisible(len(favorites) == 0)
 
         cols = 3
         for i, name in enumerate(favorites):
@@ -172,6 +336,29 @@ class ManageFavoritesDialog(QDialog):
             self.tags_layout.addWidget(tag, i // cols, i % cols)
 
         self.favorites_changed.emit()
+
+    # ── Rafraîchissement recettes ─────────────────────────────────────
+
+    def _refresh_recipes(self):
+        while self._recipes_layout.count():
+            item = self._recipes_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+
+        recipes = db_manager.get_favorite_recipes()
+        if not recipes:
+            self._recipes_layout.addWidget(self.rec_empty_lbl)
+            self.rec_empty_lbl.show()
+            return
+
+        self.rec_empty_lbl.hide()
+        for recipe in recipes:
+            row = _FavoriteRecipeRow(recipe)
+            row.open_requested.connect(self._open_recipe)
+            row.removed.connect(self._remove_recipe)
+            self._recipes_layout.addWidget(row)
+
+    # ── Actions ingrédients ───────────────────────────────────────────
 
     def _add_ingredient(self):
         name = self.add_edit.text().strip()
@@ -184,17 +371,16 @@ class ManageFavoritesDialog(QDialog):
         db_manager.add_favorite_ingredient(name)
         self.add_edit.clear()
         self.error_lbl.setText("")
-        self._refresh()
+        self._refresh_ingredients()
 
     def _remove_ingredient(self, name):
         db_manager.remove_favorite_ingredient(name)
-        self._refresh()
+        self._refresh_ingredients()
 
-    def _clear_all(self):
+    def _clear_all_ingredients(self):
         favorites = db_manager.get_favorite_ingredients()
         if not favorites:
             return
-        from PyQt5.QtWidgets import QMessageBox
         reply = QMessageBox.question(
             self, "Confirmer",
             "Supprimer tous vos ingrédients favoris ?",
@@ -203,4 +389,19 @@ class ManageFavoritesDialog(QDialog):
         if reply == QMessageBox.Yes:
             for name in favorites:
                 db_manager.remove_favorite_ingredient(name)
-            self._refresh()
+            self._refresh_ingredients()
+
+    # ── Actions recettes ──────────────────────────────────────────────
+
+    def _open_recipe(self, recipe_id: int):
+        from ui.recipe_view import RecipeViewDialog
+        recipe = db_manager.get_recipe_by_id(recipe_id)
+        if recipe:
+            dlg = RecipeViewDialog(recipe, self)
+            dlg.exec_()
+            self._refresh_recipes()
+
+    def _remove_recipe(self, recipe_id: int):
+        db_manager.remove_favorite_recipe(recipe_id)
+        self._refresh_recipes()
+        self.favorites_changed.emit()

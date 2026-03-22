@@ -331,6 +331,21 @@ class SearchPanel(QWidget):
                        self.difficulty_filter, self.cuisine_filter]:
             filters_row.addWidget(widget)
 
+        self.fav_recipes_btn = QPushButton("☆ Recettes favorites")
+        self.fav_recipes_btn.setCheckable(True)
+        self.fav_recipes_btn.setStyleSheet(
+            "QPushButton {"
+            "  background-color: #555; color: #F5F0E8;"
+            "  border-radius: 6px; padding: 6px 14px; font-size: 13px;"
+            "}"
+            "QPushButton:hover { background-color: #F39C12; color: white; }"
+            "QPushButton:checked {"
+            "  background-color: #F39C12; color: white; font-weight: bold;"
+            "}"
+        )
+        self.fav_recipes_btn.toggled.connect(self._on_fav_recipes_toggled)
+        filters_row.addWidget(self.fav_recipes_btn)
+
         reset_btn = QPushButton("Reinitialiser")
         reset_btn.setObjectName("secondary-btn")
         reset_btn.clicked.connect(self._reset_filters)
@@ -413,6 +428,17 @@ class SearchPanel(QWidget):
             max_calories=max_calories,
             use_fuzzy=bool(query)
         )
+
+        if self.fav_recipes_btn.isChecked():
+            fav_ids = {r['id'] for r in db_manager.get_favorite_recipes()}
+            if not fav_ids:
+                self.results_label.setText(
+                    "Aucune recette favorite — ouvrez une recette et cliquez sur ★ Favori."
+                )
+                self._clear_cards()
+                return
+            results = [r for r in results if r['id'] in fav_ids]
+
         self._display_results(results)
 
     def _display_results(self, recipes):
@@ -431,6 +457,16 @@ class SearchPanel(QWidget):
             card.clicked.connect(self.recipe_selected.emit)
             self.cards_layout.addWidget(card, i // cols, i % cols)
 
+    def _clear_cards(self):
+        while self.cards_layout.count():
+            item = self.cards_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+
+    def _on_fav_recipes_toggled(self, checked):
+        self.fav_recipes_btn.setText("★ Recettes favorites" if checked else "☆ Recettes favorites")
+        self._do_search()
+
     def _clear_search(self):
         self.search_bar.clear()
         self.ingredient_bar.clear()
@@ -444,6 +480,7 @@ class SearchPanel(QWidget):
         self.cuisine_filter.setCurrentIndex(0)
         self.cal_checkbox.setChecked(False)
         self.cal_spinbox.setValue(500)
+        self.fav_recipes_btn.setChecked(False)
 
     def _refresh_favorites(self):
         from database import db_manager as dm

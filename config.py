@@ -25,3 +25,7 @@ OCCASIONS = ['Quotidien', 'Fête', 'Noël', 'Pâques', 'Anniversaire', 'Dîner r
 TECHNIQUES = ['Hacher', 'Émincer', 'Blanchir', 'Saisir', 'Mijoter', 'Gratiner', 'Flamber', 'Réduire', 'Déglacer', 'Mariner', 'Fouetter', 'Pétrir']
 EQUIPMENT = ['Couteau de chef', 'Planche à découper', 'Casserole', 'Poêle', 'Four', 'Mixeur', 'Robot de cuisine', 'Thermomètre', 'Fouet', 'Spatule', 'Passoire', 'Saladier', 'Rouleau à pâtisserie', 'Wok']
 MONTH_NAMES = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
+
+OLLAMA_BASE_URL = "http://localhost:11434"
+OLLAMA_MODEL = "qwen2.5:7b"
+OLLAMA_TIMEOUT = 120

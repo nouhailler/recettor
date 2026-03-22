@@ -1,6 +1,7 @@
 import os
 import json
 import math
+from database import db_manager
 from PyQt5.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QTabWidget, QWidget, QScrollArea, QTableWidget, QTableWidgetItem,
@@ -126,6 +127,12 @@ class RecipeViewDialog(QDialog):
         header_layout.addWidget(title)
         header_layout.addStretch()
 
+        is_fav = db_manager.is_favorite_recipe(self.recipe['id'])
+        self._fav_btn = QPushButton("★ Favori" if is_fav else "☆ Favori")
+        self._fav_btn.setMinimumWidth(100)
+        self._fav_btn.setStyleSheet(self._fav_style(is_fav))
+        self._fav_btn.clicked.connect(self._toggle_favorite)
+
         edit_btn = QPushButton("Modifier")
         edit_btn.setStyleSheet("background-color: #D4A574; color: #2C1810; font-weight: bold; padding: 8px 16px;")
         edit_btn.clicked.connect(self._edit)
@@ -138,7 +145,7 @@ class RecipeViewDialog(QDialog):
         close_btn.setStyleSheet("background-color: #555; color: white; padding: 8px 16px;")
         close_btn.clicked.connect(self.close)
 
-        for btn in [edit_btn, delete_btn, close_btn]:
+        for btn in [self._fav_btn, edit_btn, delete_btn, close_btn]:
             header_layout.addWidget(btn)
 
         layout.addWidget(header)
@@ -955,6 +962,30 @@ class RecipeViewDialog(QDialog):
         scroll.setWidget(scroll_widget)
         layout.addWidget(scroll)
         return container
+
+    def _fav_style(self, is_fav: bool) -> str:
+        if is_fav:
+            return (
+                "QPushButton { background-color: #F39C12; color: white; "
+                "font-weight: bold; padding: 8px 16px; border-radius: 6px; }"
+                "QPushButton:hover { background-color: #D68910; }"
+            )
+        return (
+            "QPushButton { background-color: #555; color: #F5F0E8; "
+            "padding: 8px 16px; border-radius: 6px; }"
+            "QPushButton:hover { background-color: #F39C12; color: white; }"
+        )
+
+    def _toggle_favorite(self):
+        recipe_id = self.recipe['id']
+        if db_manager.is_favorite_recipe(recipe_id):
+            db_manager.remove_favorite_recipe(recipe_id)
+            self._fav_btn.setText("☆ Favori")
+            self._fav_btn.setStyleSheet(self._fav_style(False))
+        else:
+            db_manager.add_favorite_recipe(recipe_id)
+            self._fav_btn.setText("★ Favori")
+            self._fav_btn.setStyleSheet(self._fav_style(True))
 
     def _edit(self):
         from ui.forms.edit_recipe import EditRecipeDialog
