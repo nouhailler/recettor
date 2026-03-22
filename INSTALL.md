@@ -6,7 +6,7 @@
 
 ### 1. Télécharger le paquet
 
-Rendez-vous sur la page [Releases GitHub](https://github.com/nouhailler/recettor/releases) et téléchargez `recettor_1.0.0_amd64.deb`.
+Rendez-vous sur la page [Releases GitHub](https://github.com/nouhailler/recettor/releases) et téléchargez `recettor_1.1.0_amd64.deb`.
 
 ### 2. Installer
 
@@ -15,7 +15,7 @@ Rendez-vous sur la page [Releases GitHub](https://github.com/nouhailler/recettor
 # Double-cliquez sur le fichier .deb dans votre gestionnaire de fichiers
 
 # Ou en ligne de commande
-sudo dpkg -i recettor_1.0.0_amd64.deb
+sudo dpkg -i recettor_1.1.0_amd64.deb
 
 # Résoudre les dépendances si nécessaire
 sudo apt-get install -f
@@ -133,6 +133,26 @@ cp /opt/recettor/data/recettes.db ~/recettor_backup_$(date +%Y%m%d).db
 **Exporter toutes vos recettes au format JSON :**
 
 Depuis l'application : **Outils → Exporter toutes les recettes (JSON)**
+
+---
+
+## 🤖 Suggestions IA — Configuration Ollama (optionnel)
+
+Les suggestions IA nécessitent [Ollama](https://ollama.com) installé et démarré localement.
+
+```bash
+# Installer Ollama (Linux)
+curl -fsSL https://ollama.com/install.sh | sh
+
+# Télécharger le modèle recommandé (~8 Go RAM)
+ollama pull qwen2.5:7b
+
+# Démarrer le service (dans un terminal séparé ou en service systemd)
+ollama serve
+```
+
+> 💡 Le modèle est configurable dans `/opt/recettor/config.py` (`OLLAMA_MODEL`, `OLLAMA_TIMEOUT`).
+> Sur CPU sans GPU, comptez ~90 secondes par génération avec `qwen2.5:7b`.
 
 ---
 

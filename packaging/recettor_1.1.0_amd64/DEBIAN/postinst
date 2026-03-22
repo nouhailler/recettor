@@ -1,0 +1,49 @@
+#!/bin/bash
+set -e
+
+APP_DIR="/opt/recettor"
+VENV_DIR="${APP_DIR}/venv"
+
+echo "🍽️  Installation de Recettor v1.1.0..."
+
+# Création de l'environnement virtuel Python
+echo "  → Création de l'environnement virtuel Python..."
+python3 -m venv "${VENV_DIR}"
+
+# Installation des dépendances Python
+echo "  → Installation des dépendances Python (peut prendre quelques minutes)..."
+"${VENV_DIR}/bin/pip" install --quiet --upgrade pip
+"${VENV_DIR}/bin/pip" install --quiet \
+    "PyQt5>=5.15.0" \
+    "fuzzywuzzy>=0.18.0" \
+    "python-Levenshtein>=0.20.0" \
+    "requests>=2.28.0" \
+    "Pillow>=10.0.0" \
+    "python-dateutil>=2.8.0" \
+    "jsonschema>=4.0.0"
+
+# Création des répertoires de données utilisateur (writable)
+mkdir -p "${APP_DIR}/data/backups"
+mkdir -p "${APP_DIR}/assets/images"
+
+# Permissions
+chmod -R 755 "${APP_DIR}"
+chmod 644 "${APP_DIR}/data/saisons.json" 2>/dev/null || true
+chmod -R 777 "${APP_DIR}/data"
+chmod -R 777 "${APP_DIR}/assets/images"
+
+# Mise à jour du cache des icônes
+if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+    gtk-update-icon-cache -f -t /usr/share/icons/hicolor 2>/dev/null || true
+fi
+
+# Mise à jour de la base xdg-mime
+if command -v update-desktop-database >/dev/null 2>&1; then
+    update-desktop-database /usr/share/applications 2>/dev/null || true
+fi
+
+echo "  ✅ Recettor v1.1.0 installé avec succès !"
+echo "     Lancez l'application via le menu Applications ou avec la commande : recettor"
+echo ""
+echo "  💡 Pour les suggestions IA (optionnel) :"
+echo "     ollama pull qwen2.5:7b && ollama serve"

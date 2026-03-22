@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.1.0
+Type=Application
+Name=Recettor
+GenericName=Gestionnaire de recettes
+Comment=Gérez vos recettes avec recherche floue, suggestions IA, liste de courses et vue saisonnière
+Exec=/usr/local/bin/recettor
+Icon=recettor
+Terminal=false
+Categories=Utility;Education;Food;
+Keywords=recette;cuisine;frigo;saisonnier;ingrédient;nourriture;IA;Ollama;courses;cooking;recipe;
+StartupNotify=true
+StartupWMClass=recettor

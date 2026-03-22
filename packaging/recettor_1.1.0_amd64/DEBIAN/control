@@ -1,0 +1,21 @@
+Package: recettor
+Version: 1.1.0
+Section: utils
+Priority: optional
+Architecture: amd64
+Depends: python3 (>= 3.8), python3-pip, python3-venv, libxcb-xinerama0, libxcb1, libx11-6
+Maintainer: nouhailler <patrick.nouhailler@gmail.com>
+Homepage: https://github.com/nouhailler/recettor
+Description: Application de gestion de recettes de cuisine
+ Recettor est une application de bureau locale permettant de gérer
+ vos recettes de cuisine. Elle offre une recherche floue, un mode
+ frigo pour suggérer des recettes selon vos ingrédients disponibles,
+ une vue saisonnière, un calculateur calorique, ainsi que l'import
+ et l'export de recettes au format JSON.
+ .
+ Nouveautés v1.1.0 : suggestions IA via Ollama (local, sans Internet),
+ liste de courses intégrée, recettes favorites avec étoile,
+ filtre recettes favorites dans la recherche, support HiDPI/Wayland.
+ .
+ Toutes les données sont stockées localement dans une base SQLite.
+ Aucune connexion internet n'est requise pour les fonctions de base.
