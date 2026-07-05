@@ -35,26 +35,25 @@ Recettor est une application de bureau développée en Python / PyQt5 qui centra
 
 ## 📸 Aperçu
 
-```
-┌─────────────────────────────────────────────────────────┐
-│  🍴 Recettor                                [_ □ ×]     │
-├──────────┬──────────────────────────────────────────────┤
-│          │  🔍 Rechercher une recette  [☆ Favoris]      │
-│ Recherche│                                              │
-│          │  ┌─────────────┐  ┌─────────────┐           │
-│Saisonnali│  │ 🥗 Salade   │  │ 🍝 Pasta    │           │
-│          │  │ Niçoise     │  │ Carbonara   │           │
-│Mon Frigo │  │ Facile 20min│  │ Inter. 30min│           │
-│          │  │ 320 kcal    │  │ 680 kcal    │           │
-│🛒 Courses│  └─────────────┘  └─────────────┘           │
-│          │                                              │
-│  Ajouter │                                              │
-│          │                                              │
-│ ★ Favoris│                                              │
-├──────────┴──────────────────────────────────────────────┤
-│  📅 dimanche 22 mars 2026  |  Saison : Printemps  |  53 recettes │
-└─────────────────────────────────────────────────────────┘
-```
+### 🔍 Recherche de recettes
+Recherche floue, filtres par type / régime / difficulté / cuisine, seuil calorique et favoris.
+
+![Panneau de recherche](assets/screenshots/01-recherche.png)
+
+### 🌿 Vue saisonnière
+Ingrédients du mois, alertes de fin de saison et recettes filtrables par ingrédient.
+
+![Vue saisonnière](assets/screenshots/02-saisonnalite.png)
+
+### 🧊 Mon Frigo
+Saisissez vos ingrédients : les recettes s'affichent triées par taux de compatibilité, avec suggestions IA locales (Ollama).
+
+![Mode Mon Frigo](assets/screenshots/03-mon-frigo.png)
+
+### 📋 Fiche recette
+Six onglets détaillés : présentation, ingrédients, étapes, informations, nutrition (graphique macronutriments) et conseils.
+
+![Fiche recette](assets/screenshots/05-fiche-recette.png)
 
 ---
 
